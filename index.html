@@ -169,10 +169,19 @@
     .ac-dist .lbl { font-size:0.75rem; color:var(--muted); margin-top:3px; }
 
     /* ══════════ DETAIL PANEL ══════════ */
-    #detail-panel { border-top:1px solid var(--border); background:var(--surf2); flex-shrink:0; display:none; max-height:54%; overflow-y:auto; }
-    #detail-panel.on { display:block; }
+    #detail-panel {
+      position: fixed; bottom: -100%; left: 0; right: 0; z-index: 150;
+      background: var(--surf2);
+      border-top: 2px solid var(--accent);
+      border-radius: 20px 20px 0 0;
+      max-height: 58vh; overflow-y: auto;
+      transition: bottom 0.35s cubic-bezier(.34,1.1,.64,1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,.55);
+    }
+    #detail-panel.on { bottom: 0; }
     #detail-panel::-webkit-scrollbar { width:4px; }
     #detail-panel::-webkit-scrollbar-thumb { background:var(--border); }
+    .dp-handle { width:44px; height:5px; border-radius:3px; background:var(--border); margin:12px auto 2px; }
 
     #det-head { position:sticky; top:0; background:var(--surf2); padding:11px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-weight:700; font-size:0.95rem; z-index:1; }
     #det-close { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.1rem; }
@@ -202,7 +211,8 @@
     /* Map markers */
     .user-dot { width:14px; height:14px; border-radius:50%; background:var(--accent); border:2px solid #fff; animation:uring 2s infinite; }
     @keyframes uring { 0%{box-shadow:0 0 0 0 rgba(0,212,255,.5)} 70%{box-shadow:0 0 0 14px rgba(0,212,255,0)} 100%{box-shadow:0 0 0 0 rgba(0,212,255,0)} }
-    .plane-lbl { background:rgba(8,12,16,.92); border:1px solid rgba(0,212,255,.4); color:var(--text); border-radius:5px; padding:2px 7px; font-size:0.76rem; font-weight:700; white-space:nowrap; pointer-events:none; }
+    .plane-lbl { background:rgba(8,12,16,.92); border:1px solid rgba(0,212,255,.4); color:var(--text); border-radius:5px; padding:3px 8px; font-size:0.76rem; font-weight:700; white-space:nowrap; pointer-events:none; text-align:center; }
+    .plane-sub { display:block; font-size:.72em; font-weight:500; opacity:.75; margin-top:1px; white-space:nowrap; }
 
     @media (max-width:640px) {
       #sidebar { width:100%; height:280px; border-left:none; border-top:1px solid var(--border); }
@@ -487,8 +497,8 @@
     <div class="badge"><span id="aircraft-count">0</span> Flugzeuge</div>
     <div class="spc"></div>
     <select id="radius-select">
-      <option value="10">10 km</option>
-      <option value="15" selected>15 km</option>
+      <option value="10" selected>10 km</option>
+      <option value="15">15 km</option>
       <option value="25">25 km</option>
       <option value="50">50 km</option>
       <option value="100">100 km</option>
@@ -505,12 +515,15 @@
       <div id="aircraft-list">
         <div id="empty-state"><span id="empty-msg">Warte auf Daten…</span></div>
       </div>
-      <div id="detail-panel">
-        <div id="det-head"><span id="det-call">–</span><button id="det-close">✕</button></div>
-        <div id="det-body"></div>
-      </div>
     </div>
   </div>
+</div>
+
+<!-- DETAIL PANEL – fixed bottom overlay -->
+<div id="detail-panel">
+  <div class="dp-handle"></div>
+  <div id="det-head"><span id="det-call">–</span><button id="det-close">✕</button></div>
+  <div id="det-body"></div>
 </div>
 <div id="toast"></div>
 
@@ -759,6 +772,17 @@ async function fetchRoutes(snap) {
   }));
 }
 
+function tooltipHtml(ac) {
+  const airline = ac.route?.airline?.name || ac.callsign;
+  if (ac.route) {
+    const from = ac.route.origin?.municipality      || ac.route.origin?.iata_code      || '';
+    const to   = ac.route.destination?.municipality || ac.route.destination?.iata_code || '';
+    if (from && to)
+      return `<div class="plane-lbl">${esc(airline)}<span class="plane-sub">${esc(from)} → ${esc(to)}</span></div>`;
+  }
+  return `<span class="plane-lbl">${esc(airline)}</span>`;
+}
+
 function flag(iso) {
   if (!iso||iso.length!==2) return '';
   return [...iso.toUpperCase()].map(c=>String.fromCodePoint(c.charCodeAt(0)+127397)).join('');
@@ -872,12 +896,9 @@ function updateListItem(ac) {
     l2.style.color = 'var(--muted)';
     l3.textContent = [ac.type, ac.reg].filter(Boolean).join(' · ') || '';
   }
-  // Karten-Label auf Airline-Namen aktualisieren sobald Route bekannt
+  // Karten-Label auf Airline + Route aktualisieren sobald Route bekannt
   const _me = aircraftMarkers[ac.hex];
-  if (_me) {
-    const lbl = ac.route?.airline?.name || ac.callsign;
-    _me.marker.setTooltipContent(`<span class="plane-lbl">${esc(lbl)}</span>`);
-  }
+  if (_me) _me.marker.setTooltipContent(tooltipHtml(ac));
 }
 
 // ═══════════════════════════════════
@@ -895,9 +916,7 @@ function updateMarkers() {
         icon:planeIcon(ac.track,isSel,isTop), title:ac.callsign, zIndexOffset:isTop?500:0
       }).addTo(map);
       m.on('click',()=>select(ac.hex));
-      const lbl0 = ac.route?.airline?.name || ac.callsign;
-      m.bindTooltip(`<span class="plane-lbl">${esc(lbl0)}</span>`,
-        {permanent:isTop,direction:'top',offset:[0,-6]});
+      m.bindTooltip(tooltipHtml(ac),{permanent:isTop,direction:'top',offset:[0,-6]});
       aircraftMarkers[ac.hex]={marker:m};
     }
   });
@@ -1022,11 +1041,16 @@ function startTimer(){clearInterval(refreshTimer);refreshTimer=setInterval(fetch
 // ═══════════════════════════════════
 document.getElementById('btn-refresh').addEventListener('click',()=>userPos?fetchAircraft():getLocation());
 document.getElementById('radius-select').addEventListener('change',()=>{if(userPos)fetchAircraft();});
-document.getElementById('det-close').addEventListener('click',()=>{
+function closeDetail() {
   document.getElementById('detail-panel').classList.remove('on');
-  selectedHex=null;
-  document.querySelectorAll('.ac-item').forEach(el=>el.classList.remove('selected'));
-});
+  if (selectedHex) {
+    selectedHex = null;
+    document.querySelectorAll('.ac-item').forEach(el=>el.classList.remove('selected'));
+    updateMarkers();
+  }
+}
+document.getElementById('det-close').addEventListener('click', closeDetail);
+map.on('click', closeDetail);
 
 // ═══════════════════════════════════
 //  Boot
