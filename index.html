@@ -487,7 +487,8 @@
     <div class="badge"><span id="aircraft-count">0</span> Flugzeuge</div>
     <div class="spc"></div>
     <select id="radius-select">
-      <option value="10" selected>10 km</option>
+      <option value="10">10 km</option>
+      <option value="15" selected>15 km</option>
       <option value="25">25 km</option>
       <option value="50">50 km</option>
       <option value="100">100 km</option>
@@ -813,16 +814,18 @@ function updateListItem(ac) {
     l1.textContent   = airline ? `${airline} ${flightNum}` : flightNum;
     l1.style.color   = '';
 
-    // Zeile 2: Abflugsland
-    const fromCountry = r.origin?.country_name || r.origin?.country_iso_name || r.origin?.iata_code || '?';
-    const fromFlag    = flag(r.origin?.country_iso_name);
-    l2.innerHTML      = `🛫 ${fromFlag}&thinsp;${esc(fromCountry)}`;
+    // Zeile 2: Abflugsort (Ort + Länderkürzel)
+    const fromCity    = r.origin?.municipality || r.origin?.name || r.origin?.iata_code || '?';
+    const fromIso     = r.origin?.country_iso_name || '';
+    const fromFlag    = flag(fromIso);
+    l2.innerHTML      = `🛫 ${fromFlag}&thinsp;${esc(fromCity)}${fromIso ? ` <span style="opacity:.65">(${esc(fromIso)})</span>` : ''}`;
     l2.style.color    = 'var(--text)';
 
-    // Zeile 3: Ankunftsland
-    const toCountry   = r.destination?.country_name || r.destination?.country_iso_name || r.destination?.iata_code || '?';
-    const toFlag      = flag(r.destination?.country_iso_name);
-    l3.innerHTML      = `🛬 ${toFlag}&thinsp;${esc(toCountry)}`;
+    // Zeile 3: Ankunftsort (Ort + Länderkürzel)
+    const toCity      = r.destination?.municipality || r.destination?.name || r.destination?.iata_code || '?';
+    const toIso       = r.destination?.country_iso_name || '';
+    const toFlag      = flag(toIso);
+    l3.innerHTML      = `🛬 ${toFlag}&thinsp;${esc(toCity)}${toIso ? ` <span style="opacity:.65">(${esc(toIso)})</span>` : ''}`;
 
   } else if (ac.route === undefined) {
     // Noch nicht geladen
