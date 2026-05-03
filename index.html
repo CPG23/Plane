@@ -106,14 +106,14 @@
     }
     #ib-btn:hover { opacity:.88; }
     #ib-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem; padding:4px; }
-    .ib-ios {
+    .ib-hint {
       display:none; margin-top:14px;
       background:rgba(0,212,255,.07); border:1px solid rgba(0,212,255,.2);
       border-radius:10px; padding:12px 16px;
-      font-size:0.88rem; text-align:center; line-height:1.6;
+      font-size:0.9rem; text-align:center; line-height:1.7;
     }
-    .ib-ios.show { display:block; }
-    .ib-ios strong { color:var(--accent); }
+    .ib-hint.show { display:block; }
+    .ib-hint strong { color:var(--accent); }
 
     /* ══════════ APP ══════════ */
     #app { display:flex; flex-direction:column; height:100dvh; }
@@ -156,7 +156,7 @@
 
     /* ══════════ LIST ITEMS – grosse Schrift ══════════ */
     .ac-item {
-      padding:16px; border-bottom:1px solid var(--border);
+      padding:18px 16px; border-bottom:1px solid var(--border);
       cursor:pointer; transition:background .12s;
       display:flex; align-items:center; gap:14px;
     }
@@ -164,20 +164,20 @@
     .ac-item.selected { background:rgba(0,212,255,.08); border-left:3px solid var(--accent); padding-left:13px; }
     .ac-item.closest  { border-top:1px solid rgba(0,255,136,.4); }
 
-    .ac-arrow { font-size:1.8rem; flex-shrink:0; width:32px; text-align:center; line-height:1; }
+    .ac-arrow { font-size:2.4rem; flex-shrink:0; width:36px; text-align:center; line-height:1; }
     .ac-info  { flex:1; min-width:0; }
 
     /* Zeile 1: Airline · Flugnummer */
-    .ac-l1 { font-weight:800; font-size:1.1rem; line-height:1.3; color:var(--text); }
-    /* Zeile 2: Abflugort */
-    .ac-l2 { font-size:1rem; color:var(--text); margin-top:5px; line-height:1.3; }
-    /* Zeile 3: Ankunftort */
-    .ac-l3 { font-size:1rem; color:var(--muted); margin-top:2px; line-height:1.3; }
+    .ac-l1 { font-weight:800; font-size:1.3rem; line-height:1.3; color:var(--text); }
+    /* Zeile 2: Abflugsland */
+    .ac-l2 { font-size:1.2rem; color:var(--text); margin-top:6px; line-height:1.4; }
+    /* Zeile 3: Ankunftsland */
+    .ac-l3 { font-size:1.2rem; color:var(--muted); margin-top:3px; line-height:1.4; }
 
     /* Distance */
     .ac-dist { flex-shrink:0; text-align:right; }
-    .ac-dist .km  { font-size:1.1rem; font-weight:800; color:var(--accent); }
-    .ac-dist .lbl { font-size:0.72rem; color:var(--muted); margin-top:2px; }
+    .ac-dist .km  { font-size:1.2rem; font-weight:800; color:var(--accent); }
+    .ac-dist .lbl { font-size:0.75rem; color:var(--muted); margin-top:3px; }
 
     /* ══════════ DETAIL PANEL ══════════ */
     #detail-panel { border-top:1px solid var(--border); background:var(--surf2); flex-shrink:0; display:none; max-height:54%; overflow-y:auto; }
@@ -250,9 +250,13 @@
     <button id="ib-btn">Installieren</button>
     <button id="ib-close">✕</button>
   </div>
-  <div class="ib-ios" id="ib-ios">
+  <div class="ib-hint" id="ib-ios">
     Tippe unten auf <strong>Teilen&nbsp;⬆</strong> und dann auf<br>
     <strong>„Zum Home‑Bildschirm"</strong>
+  </div>
+  <div class="ib-hint" id="ib-manual">
+    Tippe auf <strong>⋮</strong> oben rechts und dann auf<br>
+    <strong>„Zum Startbildschirm hinzufügen"</strong>
   </div>
 </div>
 
@@ -303,26 +307,39 @@ if ('serviceWorker' in navigator) {
 //  PWA: Install Banner
 // ═══════════════════════════════════
 let installPrompt = null;
+let bannerShown   = false;
 
-function showBanner(ios) {
+function showInstallBanner() {
+  if (bannerShown) return;
   if (localStorage.getItem('ib-dismissed')) return;
   if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) return;
-  const banner = document.getElementById('install-banner');
-  if (ios) {
+  bannerShown = true;
+
+  const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const btn       = document.getElementById('ib-btn');
+
+  if (isIOS) {
     document.getElementById('ib-ios').classList.add('show');
-    document.getElementById('ib-btn').style.display = 'none';
+    btn.style.display = 'none';
+  } else if (!installPrompt) {
+    // Chrome/Android but beforeinstallprompt didn't fire (e.g. missing PNG icon)
+    // → show manual instructions
+    document.getElementById('ib-manual').classList.add('show');
+    btn.style.display = 'none';
   }
-  setTimeout(() => banner.classList.add('show'), 400);
+  // else: installPrompt is available → show Install button (already visible)
+
+  setTimeout(() => document.getElementById('install-banner').classList.add('show'), 300);
 }
 
+// Capture native install prompt (Chrome/Android)
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   installPrompt = e;
-  setTimeout(() => showBanner(false), 5000);
 });
 
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-if (isIOS) setTimeout(() => showBanner(true), 5000);
+// Always show banner after 4 s
+setTimeout(showInstallBanner, 4000);
 
 document.getElementById('ib-btn').addEventListener('click', async () => {
   if (!installPrompt) return;
