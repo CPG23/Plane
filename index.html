@@ -1050,12 +1050,12 @@ function closeDetail() {
   }
 }
 document.getElementById('det-close').addEventListener('click', closeDetail);
-map.on('click', closeDetail);
 
 // ═══════════════════════════════════
 //  Boot
 // ═══════════════════════════════════
 initMap();
+map.on('click', closeDetail);
 getLocation();
 </script>
 </body>
