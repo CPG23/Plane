@@ -414,7 +414,7 @@ setTimeout(() => { splashMinDone = true; _dismissSplash(); }, 6000);
 //  Map
 // ═══════════════════════════════════
 function initMap() {
-  map = L.map('map', { zoomControl: true });
+  map = L.map('map', { zoomControl: true, attributionControl: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> | <a href="https://adsb.fi">adsb.fi</a>',
     maxZoom: 19
