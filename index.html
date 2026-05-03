@@ -39,6 +39,7 @@
       background: #03071a;
       display: flex; flex-direction: column;
       align-items: stretch; justify-content: flex-end;
+      padding-bottom: 18vh;
       transition: opacity 0.9s ease;
       overflow: hidden;
     }
@@ -48,9 +49,10 @@
 
     .sp-overlay {
       position: relative; z-index: 2;
-      padding: 0 24px 44px;
-      background: linear-gradient(to top, rgba(3,7,26,.97) 52%, rgba(3,7,26,0) 100%);
-      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      padding: 0 24px 80px;
+      margin-top: auto;
+      background: linear-gradient(to top, rgba(3,7,26,.97) 60%, rgba(3,7,26,0) 100%);
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
     }
     .sp-brand { text-align: center; }
     .sp-brand h1 { font-size: 3rem; font-weight: 900; letter-spacing: -1px; line-height: 1; }
@@ -1009,7 +1011,7 @@ function showDetail(ac) {
     <div class="det-grid">
       <div class="det-cell"><div class="det-lbl">Entfernung</div><div class="det-val">${Math.round(ac.dist)} km</div></div>
       <div class="det-cell"><div class="det-lbl">Höhe</div><div class="det-val">${alt}${altM?`<br><small style="color:var(--muted);font-size:.75rem">${altM}</small>`:''}</div></div>
-      <div class="det-cell"><div class="det-lbl">Geschwindigkeit</div><div class="det-val">${spd}${spdKmh?`<br><small style="color:var(--muted);font-size:.75rem">${spdKmh}</small>`:''}</div></div>
+
       ${ac.reg  ?`<div class="det-cell"><div class="det-lbl">Kennzeichen</div><div class="det-val">${esc(ac.reg)}</div></div>`:''}
       ${ac.type ?`<div class="det-cell"><div class="det-lbl">Typ</div><div class="det-val">${esc(ac.type)}</div></div>`:''}
       <div class="det-cell full">
