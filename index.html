@@ -170,15 +170,16 @@
 
     /* ══════════ DETAIL PANEL ══════════ */
     #detail-panel {
-      position: fixed; bottom: -100%; left: 0; right: 0; z-index: 150;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
       background: var(--surf2);
       border-top: 2px solid var(--accent);
       border-radius: 20px 20px 0 0;
       max-height: 58vh; overflow-y: auto;
-      transition: bottom 0.35s cubic-bezier(.34,1.1,.64,1);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(.34,1.1,.64,1);
       box-shadow: 0 -8px 40px rgba(0,0,0,.55);
     }
-    #detail-panel.on { bottom: 0; }
+    #detail-panel.on { transform: translateY(0); }
     #detail-panel::-webkit-scrollbar { width:4px; }
     #detail-panel::-webkit-scrollbar-thumb { background:var(--border); }
     .dp-handle { width:44px; height:5px; border-radius:3px; background:var(--border); margin:12px auto 2px; }
