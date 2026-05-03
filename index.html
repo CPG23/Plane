@@ -730,12 +730,13 @@ function updateMarkers() {
     if (aircraftMarkers[ac.hex]) {
       animateMarkerTo(ac.hex, ac.lat, ac.lng);
       aircraftMarkers[ac.hex].marker.setIcon(planeIcon(ac,isSel,isTop));
+      aircraftMarkers[ac.hex].marker.setTooltipContent(tooltipHtml(ac));
     } else {
       const m = L.marker([ac.lat,ac.lng],{
         icon:planeIcon(ac,isSel,isTop), title:ac.callsign, zIndexOffset:isTop?500:0
       }).addTo(map);
       m.on('click', e => { L.DomEvent.stopPropagation(e); select(ac.hex); });
-      m.bindTooltip(tooltipHtml(ac),{permanent:isTop,direction:'top',offset:[0,-6]});
+      m.bindTooltip(tooltipHtml(ac),{permanent:true,direction:'top',offset:[0,-6]});
       aircraftMarkers[ac.hex]={marker:m};
     }
   });
