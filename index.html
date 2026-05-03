@@ -221,9 +221,12 @@
     #toast.on { transform:translateX(-50%) translateY(0); }
 
     /* Map markers */
+    .user-wrap { position:relative; width:60px; height:60px; }
+    .user-heading-svg { position:absolute; top:0; left:0; pointer-events:none; }
     .user-dot {
-      width:22px; height:22px; border-radius:50%;
-      background:#00d4ff; border:3px solid #fff;
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:18px; height:18px; border-radius:50%;
+      background:#00d4ff; border:2.5px solid #fff;
       box-shadow: 0 2px 10px rgba(0,0,0,.55);
       animation: uring 2s ease-out infinite;
     }
@@ -380,10 +383,12 @@ document.getElementById('ib-close').addEventListener('click', () => {
 // ═══════════════════════════════════
 //  State
 // ═══════════════════════════════════
-const REFRESH_MS = 10_000;
+const REFRESH_MS = 5_000;
 const KM_TO_NM   = 0.539957;
 
 let map, userMarker;
+let userHeading = null;
+let _lastHeadingTs = 0;
 let userPos         = null;
 let aircraftData    = [];
 let aircraftMarkers = {};
@@ -443,11 +448,29 @@ function getLocation() {
 }
 
 function placeUser() {
+  const rot  = userHeading !== null ? userHeading : 0;
+  const show = userHeading !== null ? '' : 'display:none;';
+  const html = `<div class="user-wrap">
+    <svg class="user-heading-svg" viewBox="0 0 60 60" width="60" height="60">
+      <g class="user-heading-g" style="${show}transform:rotate(${rot}deg);transform-origin:30px 30px;">
+        <path d="M30,3 L22,22 L30,17 L38,22 Z" fill="rgba(0,212,255,.9)" stroke="rgba(255,255,255,.5)" stroke-width="1" stroke-linejoin="round"/>
+      </g>
+    </svg>
+    <div class="user-dot"></div>
+  </div>`;
   if (userMarker) map.removeLayer(userMarker);
   userMarker = L.marker([userPos.lat, userPos.lng], {
-    icon: L.divIcon({ className:'', html:'<div class="user-dot"></div>', iconSize:[22,22], iconAnchor:[11,11] }),
+    icon: L.divIcon({ className:'', html, iconSize:[60,60], iconAnchor:[30,30] }),
     zIndexOffset: 1000
   }).addTo(map).bindPopup('<b>Mein Standort</b>');
+}
+
+function updateUserHeadingDisplay() {
+  const g = document.querySelector('.user-heading-g');
+  if (!g) return;
+  g.style.transform = `rotate(${userHeading}deg)`;
+  g.style.transformOrigin = '30px 30px';
+  g.style.display = '';
 }
 
 // ═══════════════════════════════════
@@ -904,6 +927,35 @@ document.getElementById('det-close').addEventListener('click', closeDetail);
 initMap();
 map.on('click', closeDetail);
 getLocation();
+
+// ── Device orientation (compass heading) ──────────────────────────────────
+function onOrientationEvent(e) {
+  const now = Date.now();
+  if (now - _lastHeadingTs < 80) return;
+  _lastHeadingTs = now;
+  let h = null;
+  if (typeof e.webkitCompassHeading === 'number') {
+    h = e.webkitCompassHeading;                  // iOS – true north, clockwise
+  } else if (typeof e.alpha === 'number') {
+    h = (360 - e.alpha) % 360;                   // Android
+  }
+  if (h === null) return;
+  userHeading = h;
+  updateUserHeadingDisplay();
+}
+// Android / desktop: no permission needed
+window.addEventListener('deviceorientationabsolute', onOrientationEvent, true);
+// iOS 13+: request on first user tap (must be inside a gesture handler)
+document.body.addEventListener('click', function iosOrient() {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(s => { if (s === 'granted') window.addEventListener('deviceorientation', onOrientationEvent, true); })
+      .catch(() => {});
+  } else {
+    window.addEventListener('deviceorientation', onOrientationEvent, true);
+  }
+}, { once: true });
 </script>
 </body>
 </html>
