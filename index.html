@@ -567,14 +567,16 @@ async function fetchRoutes(snap) {
 }
 
 function tooltipHtml(ac) {
-  const airline = ac.route?.airline?.name || ac.callsign;
   if (ac.route) {
+    const airline = ac.route.airline?.name || ac.callsign;
     const from = ac.route.origin?.municipality      || ac.route.origin?.iata_code      || '';
     const to   = ac.route.destination?.municipality || ac.route.destination?.iata_code || '';
     if (from && to)
       return `<div class="plane-lbl">${esc(airline)}<span class="plane-sub">${esc(from)} → ${esc(to)}</span></div>`;
+    return `<span class="plane-lbl">${esc(airline)}</span>`;
   }
-  return `<span class="plane-lbl">${esc(airline)}</span>`;
+  if (ac.route === null) return `<span class="plane-lbl">${esc(classifyAircraft(ac))}</span>`;
+  return `<span class="plane-lbl">${esc(ac.callsign)}</span>`;
 }
 
 function flag(iso) {
@@ -757,7 +759,11 @@ function select(hex) {
 
 function showDetail(ac) {
   document.getElementById('detail-panel').classList.add('on');
-  document.getElementById('det-call').textContent = ac.callsign;
+  const r0 = ac.route;
+  const title = r0 ? (r0.airline?.name || ac.callsign)
+              : r0 === null ? classifyAircraft(ac)
+              : ac.callsign;
+  document.getElementById('det-call').textContent = title;
 
   const r       = ac.route;
   const alt     = ac.altFt   !=null ? Math.round(ac.altFt).toLocaleString('de')+' ft' : '–';
