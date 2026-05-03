@@ -872,6 +872,12 @@ function updateListItem(ac) {
     l2.style.color = 'var(--muted)';
     l3.textContent = [ac.type, ac.reg].filter(Boolean).join(' · ') || '';
   }
+  // Karten-Label auf Airline-Namen aktualisieren sobald Route bekannt
+  const _me = aircraftMarkers[ac.hex];
+  if (_me) {
+    const lbl = ac.route?.airline?.name || ac.callsign;
+    _me.marker.setTooltipContent(`<span class="plane-lbl">${esc(lbl)}</span>`);
+  }
 }
 
 // ═══════════════════════════════════
@@ -889,7 +895,8 @@ function updateMarkers() {
         icon:planeIcon(ac.track,isSel,isTop), title:ac.callsign, zIndexOffset:isTop?500:0
       }).addTo(map);
       m.on('click',()=>select(ac.hex));
-      m.bindTooltip(`<span class="plane-lbl">${esc(ac.callsign)}</span>`,
+      const lbl0 = ac.route?.airline?.name || ac.callsign;
+      m.bindTooltip(`<span class="plane-lbl">${esc(lbl0)}</span>`,
         {permanent:isTop,direction:'top',offset:[0,-6]});
       aircraftMarkers[ac.hex]={marker:m};
     }
