@@ -61,7 +61,8 @@
     .s-dot { width:7px; height:7px; border-radius:50%; background:var(--yellow); animation:blink 1s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-    .sp-credit { font-size: 0.72rem; color: rgba(90,122,138,.6); letter-spacing: .5px; }
+    .sp-credit { font-size: 0.95rem; font-weight: 600; color: rgba(200,220,235,.85); letter-spacing: .5px; }
+    .leaflet-attribution-flag { display: none !important; }
 
     /* ══════════ INSTALL BANNER ══════════ */
     #install-banner {
@@ -1009,9 +1010,6 @@ function showDetail(ac) {
       <div class="det-cell"><div class="det-lbl">Entfernung</div><div class="det-val">${Math.round(ac.dist)} km</div></div>
       <div class="det-cell"><div class="det-lbl">Höhe</div><div class="det-val">${alt}${altM?`<br><small style="color:var(--muted);font-size:.75rem">${altM}</small>`:''}</div></div>
       <div class="det-cell"><div class="det-lbl">Geschwindigkeit</div><div class="det-val">${spd}${spdKmh?`<br><small style="color:var(--muted);font-size:.75rem">${spdKmh}</small>`:''}</div></div>
-      <div class="det-cell"><div class="det-lbl">Steigrate</div><div class="det-val ${vsClass}">${vs}</div></div>
-      <div class="det-cell"><div class="det-lbl">Kurs</div><div class="det-val">${trk}</div></div>
-      <div class="det-cell"><div class="det-lbl">Squawk</div><div class="det-val">${ac.squawk||'–'}</div></div>
       ${ac.reg  ?`<div class="det-cell"><div class="det-lbl">Kennzeichen</div><div class="det-val">${esc(ac.reg)}</div></div>`:''}
       ${ac.type ?`<div class="det-cell"><div class="det-lbl">Typ</div><div class="det-val">${esc(ac.type)}</div></div>`:''}
       <div class="det-cell full">
