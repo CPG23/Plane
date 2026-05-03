@@ -577,16 +577,16 @@ function updateListItem(ac) {
     l1.textContent   = airline ? `${airline} ${flightNum}` : flightNum;
     l1.style.color   = '';
 
-    // Zeile 2: Abflugort
-    const fromCity   = r.origin?.municipality || r.origin?.name || r.origin?.iata_code || '?';
-    const fromFlag   = flag(r.origin?.country_iso_name);
-    l2.innerHTML     = `${fromFlag}&thinsp;${esc(fromCity)}`;
-    l2.style.color   = 'var(--text)';
+    // Zeile 2: Abflugsland
+    const fromCountry = r.origin?.country_name || r.origin?.country_iso_name || r.origin?.iata_code || '?';
+    const fromFlag    = flag(r.origin?.country_iso_name);
+    l2.innerHTML      = `${fromFlag}&thinsp;${esc(fromCountry)}`;
+    l2.style.color    = 'var(--text)';
 
-    // Zeile 3: Ankunftort
-    const toCity     = r.destination?.municipality || r.destination?.name || r.destination?.iata_code || '?';
-    const toFlag     = flag(r.destination?.country_iso_name);
-    l3.innerHTML     = `${toFlag}&thinsp;${esc(toCity)}`;
+    // Zeile 3: Ankunftsland
+    const toCountry   = r.destination?.country_name || r.destination?.country_iso_name || r.destination?.iata_code || '?';
+    const toFlag      = flag(r.destination?.country_iso_name);
+    l3.innerHTML      = `${toFlag}&thinsp;${esc(toCountry)}`;
 
   } else if (ac.route === undefined) {
     // Noch nicht geladen
