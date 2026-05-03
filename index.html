@@ -36,43 +36,32 @@
     /* ══════════ SPLASH ══════════ */
     #splash {
       position: fixed; inset: 0; z-index: 300;
-      background: var(--bg);
+      background: #03071a;
       display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 36px;
+      align-items: stretch; justify-content: flex-end;
       transition: opacity 0.9s ease;
+      overflow: hidden;
     }
     #splash.out { opacity: 0; pointer-events: none; }
 
-    .sr { position: relative; width: 230px; height: 230px; display: flex; align-items: center; justify-content: center; }
-    .sr-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(0,255,136,.2); }
-    .sr-ring.r1 { inset: 0; }
-    .sr-ring.r2 { inset: 22%; }
-    .sr-ring.r3 { inset: 44%; }
-    .sr::before,.sr::after { content:''; position:absolute; background:rgba(0,255,136,.1); }
-    .sr::before { width:100%; height:1px; }
-    .sr::after  { width:1px; height:100%; }
-    .sr-sweep {
-      position: absolute; inset: 0; border-radius: 50%;
-      background: conic-gradient(from 0deg, rgba(0,255,136,0) 0deg, rgba(0,255,136,.6) 50deg, rgba(0,255,136,.1) 100deg, rgba(0,255,136,0) 130deg, rgba(0,255,136,0) 360deg);
-      animation: spin 2.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .sr-blip { position:absolute; width:7px; height:7px; border-radius:50%; background:var(--green); animation:blip 2.8s ease-in-out infinite; }
-    .sr-blip:nth-child(1){top:20%;left:63%;animation-delay:.4s}
-    .sr-blip:nth-child(2){top:62%;left:27%;animation-delay:1.5s}
-    .sr-blip:nth-child(3){top:35%;left:80%;animation-delay:2.2s}
-    .sr-blip:nth-child(4){top:75%;left:55%;animation-delay:1s}
-    @keyframes blip { 0%,100%{opacity:0;transform:scale(.2)} 50%{opacity:1;transform:scale(1);box-shadow:0 0 10px var(--green),0 0 20px rgba(0,255,136,.4)} }
-    .sr-center { width:11px; height:11px; border-radius:50%; background:var(--accent); box-shadow:0 0 14px var(--accent),0 0 28px rgba(0,212,255,.3); z-index:2; }
+    .sp-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-    .sb { text-align: center; }
-    .sb h1 { font-size: 3rem; font-weight: 900; letter-spacing: -1px; line-height: 1; }
-    .sb h1 em { color: var(--accent); font-style: normal; }
-    .sb p { color: var(--muted); font-size: 0.9rem; margin-top: 8px; letter-spacing: 1px; text-transform: uppercase; }
+    .sp-overlay {
+      position: relative; z-index: 2;
+      padding: 0 24px 44px;
+      background: linear-gradient(to top, rgba(3,7,26,.97) 52%, rgba(3,7,26,0) 100%);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .sp-brand { text-align: center; }
+    .sp-brand h1 { font-size: 3rem; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+    .sp-brand h1 em { color: var(--accent); font-style: normal; }
+    .sp-tag { color: var(--muted); font-size: 0.88rem; margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; }
 
     #splash-st { color: var(--muted); font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
     .s-dot { width:7px; height:7px; border-radius:50%; background:var(--yellow); animation:blink 1s infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    .sp-credit { font-size: 0.72rem; color: rgba(90,122,138,.6); letter-spacing: .5px; }
 
     /* ══════════ INSTALL BANNER ══════════ */
     #install-banner {
@@ -225,17 +214,247 @@
 
 <!-- SPLASH -->
 <div id="splash">
-  <div class="sr">
-    <div class="sr-ring r1"></div><div class="sr-ring r2"></div><div class="sr-ring r3"></div>
-    <div class="sr-sweep"></div>
-    <div class="sr-blip"></div><div class="sr-blip"></div><div class="sr-blip"></div><div class="sr-blip"></div>
-    <div class="sr-center"></div>
+  <svg class="sp-bg" viewBox="0 0 360 640" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sp-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#030710"/>
+        <stop offset="42%"  stop-color="#07122a"/>
+        <stop offset="68%"  stop-color="#0d1f4a"/>
+        <stop offset="78%"  stop-color="#2c1e06"/>
+        <stop offset="87%"  stop-color="#b84e0c"/>
+        <stop offset="93%"  stop-color="#d96018"/>
+        <stop offset="100%" stop-color="#9a3206"/>
+      </linearGradient>
+      <linearGradient id="sp-gnd" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#0c1820"/>
+        <stop offset="100%" stop-color="#040810"/>
+      </linearGradient>
+      <radialGradient id="sp-sun" cx="50%" cy="100%" r="55%">
+        <stop offset="0%"   stop-color="#ff8020" stop-opacity=".62"/>
+        <stop offset="45%"  stop-color="#e04000" stop-opacity=".26"/>
+        <stop offset="100%" stop-color="#ff2200" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="sp-llt" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
+        <stop offset="35%"  stop-color="#eef8ff" stop-opacity=".7"/>
+        <stop offset="100%" stop-color="#aaccff" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="sp-b2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter>
+      <filter id="sp-b4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+      <filter id="sp-b8" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+    </defs>
+
+    <!-- Sky -->
+    <rect width="360" height="640" fill="url(#sp-sky)"/>
+    <!-- Horizon glow -->
+    <ellipse cx="180" cy="448" rx="220" ry="88" fill="url(#sp-sun)"/>
+
+    <!-- Stars -->
+    <circle cx="22"  cy="32"  r="1.2" fill="#fff" opacity=".85"/>
+    <circle cx="68"  cy="16"  r=".9"  fill="#fff" opacity=".7"/>
+    <circle cx="115" cy="26"  r="1.1" fill="#fff" opacity=".8"/>
+    <circle cx="168" cy="10"  r=".7"  fill="#fff" opacity=".6"/>
+    <circle cx="228" cy="38"  r="1.3" fill="#fff" opacity=".9"/>
+    <circle cx="285" cy="20"  r=".9"  fill="#fff" opacity=".75"/>
+    <circle cx="338" cy="45"  r="1.0" fill="#fff" opacity=".65"/>
+    <circle cx="48"  cy="68"  r=".7"  fill="#fff" opacity=".6"/>
+    <circle cx="105" cy="55"  r="1.1" fill="#fff" opacity=".8"/>
+    <circle cx="158" cy="50"  r=".8"  fill="#fff" opacity=".65"/>
+    <circle cx="215" cy="72"  r=".9"  fill="#fff" opacity=".7"/>
+    <circle cx="265" cy="52"  r="1.2" fill="#fff" opacity=".8"/>
+    <circle cx="318" cy="76"  r=".7"  fill="#fff" opacity=".55"/>
+    <circle cx="12"  cy="92"  r=".9"  fill="#fff" opacity=".6"/>
+    <circle cx="84"  cy="102" r=".7"  fill="#fff" opacity=".5"/>
+    <circle cx="142" cy="84"  r="1.0" fill="#fff" opacity=".7"/>
+    <circle cx="198" cy="94"  r=".8"  fill="#fff" opacity=".55"/>
+    <circle cx="252" cy="88"  r="1.1" fill="#fff" opacity=".75"/>
+    <circle cx="342" cy="108" r=".8"  fill="#fff" opacity=".5"/>
+    <circle cx="38"  cy="125" r=".7"  fill="#fff" opacity=".4"/>
+    <circle cx="172" cy="115" r=".9"  fill="#fff" opacity=".5"/>
+    <circle cx="308" cy="130" r=".8"  fill="#fff" opacity=".4"/>
+
+    <!-- Crescent moon (upper right) -->
+    <circle cx="302" cy="60" r="19" fill="#fffadc" opacity=".92"/>
+    <circle cx="313" cy="55" r="17" fill="#05091e"/>
+
+    <!-- Cloud layers near horizon -->
+    <ellipse cx="70"  cy="392" rx="78"  ry="13" fill="#16284a" opacity=".55" filter="url(#sp-b4)"/>
+    <ellipse cx="265" cy="400" rx="95"  ry="11" fill="#14223e" opacity=".45" filter="url(#sp-b4)"/>
+    <ellipse cx="160" cy="412" rx="115" ry="10" fill="#12203a" opacity=".4"  filter="url(#sp-b4)"/>
+    <ellipse cx="45"  cy="422" rx="55"  ry="8"  fill="#261508" opacity=".5"  filter="url(#sp-b2)"/>
+    <ellipse cx="318" cy="418" rx="58"  ry="7"  fill="#280f06" opacity=".5"  filter="url(#sp-b2)"/>
+
+    <!-- ═══ AIRCRAFT: commercial jetliner, side profile, nose-left, final approach descent ═══ -->
+    <g transform="translate(182,208) rotate(-9) scale(1.08)">
+
+      <!-- Landing light forward cone -->
+      <ellipse cx="-108" cy="24" rx="34" ry="46" fill="url(#sp-llt)" opacity=".4" filter="url(#sp-b8)" transform="rotate(-20,-108,24)"/>
+
+      <!-- Wing (near wing, below fuselage) -->
+      <path d="M -6 11 L -60 56 L 4 56 L 28 11 Z" fill="#b0bfc8"/>
+      <path d="M -6 11 L -60 56 L -54 55 L -4 12 Z" fill="#ccd8e2" opacity=".6"/>
+
+      <!-- Engine nacelle -->
+      <ellipse cx="-18" cy="38" rx="20" ry="7.5" fill="#6a7a88" transform="rotate(-4,-18,38)"/>
+      <ellipse cx="-18" cy="38" rx="18" ry="6"   fill="#505e6a" transform="rotate(-4,-18,38)"/>
+      <ellipse cx="-24" cy="36" rx="9"  ry="6"   fill="#282c30" transform="rotate(-4,-24,36)"/>
+      <ellipse cx="-24" cy="36" rx="7"  ry="4.5" fill="#1a1e22" transform="rotate(-4,-24,36)"/>
+      <!-- Engine exhaust heat glow -->
+      <ellipse cx="-12" cy="40" rx="6" ry="3" fill="#ff6020" opacity=".3" filter="url(#sp-b2)"/>
+
+      <!-- Horizontal stabilizers -->
+      <path d="M 68 -5 L 92  8 L 90 13 L 66  3 Z" fill="#9ab0c0"/>
+      <path d="M 68  5 L 88 -6 L 90 -11 L 66 1 Z" fill="#8aa0b0"/>
+
+      <!-- Fuselage body -->
+      <path d="
+        M -96 2
+        C -90 -13, -78 -15, -62 -15
+        L  58 -13
+        C  72 -13, 83 -8, 90 4
+        C  83 11, 70 13, 58 13
+        L -62 14
+        C -78 14, -90 11, -96 2 Z
+      " fill="#c8d5de"/>
+      <!-- Belly shading -->
+      <path d="
+        M -62 14 L 58 13 C 70 13, 82 10, 88 6 L 90 4
+        C 83 11, 70 13, 58 13 L -62 14
+        C -78 14, -90 11, -96 6
+        C -90 12, -78 15, -62 15 Z
+      " fill="#7a8890" opacity=".9"/>
+      <!-- Upper fuselage sheen -->
+      <path d="
+        M -62 -15 L 56 -13 C 66 -13, 74 -10, 80 -7
+        C 72 -8, 62 -10, 55 -10 L -62 -12
+        C -72 -12, -80 -9, -86 -5
+        C -80 -11, -70 -15, -62 -15 Z
+      " fill="#eef4f8" opacity=".28"/>
+
+      <!-- Vertical tail fin -->
+      <path d="M 62 -13 L 58 -58 C 64 -55, 76 -42, 84 -22 L 88 -13 Z" fill="#9ab0c0"/>
+      <path d="M 62 -13 L 58 -58 L 60 -57 L 64 -13 Z" fill="#c8d8e8" opacity=".45"/>
+
+      <!-- Airline livery stripe (cyan) -->
+      <rect x="-58" y="-6" width="118" height="3.5" rx="1.5" fill="#00d4ff" opacity=".6"/>
+
+      <!-- Cockpit windshield -->
+      <path d="M -96 2 C -88 -13, -78 -15, -68 -15 L -58 -15 C -68 -8, -76 -3, -82 3 Z" fill="#5080b0" opacity=".85"/>
+      <path d="M -82  3 C -76 -3, -68 -8, -58 -15 L -54 -15 C -63 -6, -70 -1, -74 5 Z" fill="#80b0d8" opacity=".5"/>
+
+      <!-- Passenger windows -->
+      <g fill="#c8e2f8" opacity=".88">
+        <rect x="-54" y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="-44" y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="-34" y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="-24" y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="-14" y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="-4"  y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="6"   y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="16"  y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="26"  y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="36"  y="-8.5" width="5.5" height="4.5" rx="1"/>
+        <rect x="46"  y="-8.5" width="5.5" height="4.5" rx="1"/>
+      </g>
+
+      <!-- Nose landing gear -->
+      <line x1="-74" y1="13" x2="-71" y2="34" stroke="#5a6878" stroke-width="2.2"/>
+      <ellipse cx="-70" cy="36" rx="5.5" ry="3.2" fill="#4a5868"/>
+
+      <!-- Main landing gear (two bogies) -->
+      <line x1="6"  y1="13" x2="3"  y2="37" stroke="#5a6878" stroke-width="2.5"/>
+      <line x1="16" y1="13" x2="13" y2="37" stroke="#5a6878" stroke-width="2.5"/>
+      <ellipse cx="3"  cy="40" rx="6.5" ry="3.5" fill="#4a5868"/>
+      <ellipse cx="13" cy="40" rx="6.5" ry="3.5" fill="#4a5868"/>
+      <rect x="0" y="13.5" width="18" height="6" rx="1" fill="#6a7a88" opacity=".5"/>
+
+      <!-- Landing lights (nose) -->
+      <circle cx="-94" cy="5"  r="5"  fill="#ffffff" opacity=".9"/>
+      <circle cx="-94" cy="5"  r="10" fill="url(#sp-llt)" opacity=".55" filter="url(#sp-b2)"/>
+      <circle cx="-90" cy="-3" r="3"  fill="#eef8ff" opacity=".85"/>
+      <circle cx="-90" cy="-3" r="5"  fill="url(#sp-llt)" opacity=".45" filter="url(#sp-b2)"/>
+
+    </g>
+    <!-- ═══ END AIRCRAFT ═══ -->
+
+    <!-- Ground / city silhouette -->
+    <path d="
+      M 0 492 L 0 640 L 360 640 L 360 500
+      L 345 500 L 345 488 L 332 488 L 332 498
+      L 318 498 L 318 472 L 308 472 L 308 482
+      L 294 482 L 294 462 L 282 462 L 282 452
+      L 270 452 L 270 468 L 258 468 L 258 510
+      L 245 510 L 245 468 L 235 468 L 235 478
+      L 222 478 L 222 462 L 212 462 L 212 510
+      L 198 510 L 198 465 L 188 465 L 188 455
+      L 178 455 L 178 468 L 165 468 L 165 512
+      L 152 512 L 152 468 L 142 468 L 142 475
+      L 130 475 L 130 458 L 118 458 L 118 472
+      L 108 472 L 108 510 L 92 510 L 92 475
+      L 80 475 L 80 485 L 68 485 L 68 465
+      L 55 465 L 55 510 L 42 510 L 42 492
+      L 28 492 L 28 502 L 14 502 L 14 510 L 0 510 Z
+    " fill="url(#sp-gnd)"/>
+
+    <!-- City lights -->
+    <circle cx="22"  cy="518" r="1.6" fill="#ffaa40" opacity=".9"/>
+    <circle cx="38"  cy="527" r="1.2" fill="#ffcc60" opacity=".8"/>
+    <circle cx="55"  cy="515" r="1.6" fill="#ff9930" opacity=".85"/>
+    <circle cx="72"  cy="525" r="1.3" fill="#ffbb50" opacity=".75"/>
+    <circle cx="90"  cy="514" r="1.2" fill="#ffaa40" opacity=".9"/>
+    <circle cx="108" cy="522" r="1.6" fill="#ffdd70" opacity=".8"/>
+    <circle cx="128" cy="516" r="1.3" fill="#ff9930" opacity=".75"/>
+    <circle cx="146" cy="528" r="1.2" fill="#ffcc60" opacity=".85"/>
+    <circle cx="165" cy="518" r="1.6" fill="#ffaa40" opacity=".9"/>
+    <circle cx="182" cy="510" r="1.2" fill="#ffdd70" opacity=".7"/>
+    <circle cx="200" cy="523" r="1.6" fill="#ffbb50" opacity=".85"/>
+    <circle cx="218" cy="516" r="1.3" fill="#ff9930" opacity=".8"/>
+    <circle cx="238" cy="526" r="1.2" fill="#ffcc60" opacity=".75"/>
+    <circle cx="255" cy="514" r="1.6" fill="#ffaa40" opacity=".9"/>
+    <circle cx="272" cy="522" r="1.3" fill="#ffdd70" opacity=".8"/>
+    <circle cx="290" cy="516" r="1.2" fill="#ff9930" opacity=".75"/>
+    <circle cx="308" cy="526" r="1.6" fill="#ffbb50" opacity=".85"/>
+    <circle cx="326" cy="514" r="1.3" fill="#ffaa40" opacity=".7"/>
+    <circle cx="344" cy="522" r="1.2" fill="#ffcc60" opacity=".8"/>
+    <circle cx="30"  cy="542" r="1.2" fill="#ffaa40" opacity=".55"/>
+    <circle cx="62"  cy="545" r="1.5" fill="#ffcc60" opacity=".5"/>
+    <circle cx="95"  cy="538" r="1.3" fill="#ff9930" opacity=".55"/>
+    <circle cx="128" cy="548" r="1.2" fill="#ffbb50" opacity=".5"/>
+    <circle cx="160" cy="540" r="1.5" fill="#ffaa40" opacity=".55"/>
+    <circle cx="192" cy="550" r="1.2" fill="#ffdd70" opacity=".45"/>
+    <circle cx="225" cy="542" r="1.3" fill="#ff9930" opacity=".5"/>
+    <circle cx="258" cy="546" r="1.5" fill="#ffcc60" opacity=".55"/>
+    <circle cx="290" cy="539" r="1.2" fill="#ffaa40" opacity=".5"/>
+    <circle cx="322" cy="548" r="1.3" fill="#ffbb50" opacity=".45"/>
+
+    <!-- Runway approach lights (perspective, converging to horizon) -->
+    <circle cx="180" cy="490" r="2.5" fill="#fff" opacity=".9"/>
+    <circle cx="180" cy="484" r="2.0" fill="#fff" opacity=".85"/>
+    <circle cx="180" cy="478" r="1.8" fill="#fff" opacity=".78"/>
+    <circle cx="180" cy="472" r="1.5" fill="#fff" opacity=".68"/>
+    <circle cx="180" cy="466" r="1.2" fill="#fff" opacity=".55"/>
+    <circle cx="180" cy="461" r="1.0" fill="#fff" opacity=".42"/>
+    <line x1="162" y1="483" x2="198" y2="483" stroke="#fff" stroke-width="1.2" opacity=".5"/>
+    <line x1="156" y1="477" x2="204" y2="477" stroke="#fff" stroke-width="1.0" opacity=".4"/>
+    <line x1="150" y1="471" x2="210" y2="471" stroke="#fff" stroke-width=".8"  opacity=".3"/>
+    <circle cx="157" cy="483" r="1.8" fill="#ffee88" opacity=".85"/>
+    <circle cx="203" cy="483" r="1.8" fill="#ffee88" opacity=".85"/>
+    <circle cx="150" cy="477" r="1.5" fill="#ffee88" opacity=".72"/>
+    <circle cx="210" cy="477" r="1.5" fill="#ffee88" opacity=".72"/>
+    <circle cx="143" cy="471" r="1.3" fill="#ffee88" opacity=".58"/>
+    <circle cx="217" cy="471" r="1.3" fill="#ffee88" opacity=".58"/>
+    <circle cx="136" cy="465" r="1.1" fill="#ffee88" opacity=".42"/>
+    <circle cx="224" cy="465" r="1.1" fill="#ffee88" opacity=".42"/>
+  </svg>
+
+  <div class="sp-overlay">
+    <div class="sp-brand">
+      <h1>Flug<em>Radar</em></h1>
+      <p class="sp-tag">Flugzeuge über dir · Echtzeit</p>
+    </div>
+    <div id="splash-st"><div class="s-dot"></div><span id="splash-msg">Standort wird ermittelt…</span></div>
+    <p class="sp-credit">Created by Christian Gehring</p>
   </div>
-  <div class="sb">
-    <h1>Flug<em>Radar</em></h1>
-    <p>Flugzeuge über dir · Echtzeit</p>
-  </div>
-  <div id="splash-st"><div class="s-dot"></div><span id="splash-msg">Standort wird ermittelt…</span></div>
 </div>
 
 <!-- INSTALL BANNER -->
