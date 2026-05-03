@@ -35,7 +35,7 @@
 
     /* ══════════ SPLASH ══════════ */
     #splash {
-      position: fixed; inset: 0; z-index: 300;
+      position: fixed; inset: 0; z-index: 1000;
       background: #03071a;
       display: flex; flex-direction: column;
       align-items: stretch; justify-content: flex-end;
@@ -132,7 +132,7 @@
     .leaflet-container { background:#0a1020 !important; }
 
     /* ══════════ SIDEBAR ══════════ */
-    #sidebar { width:320px; flex-shrink:0; background:var(--surf); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+    #sidebar { display:none; }
     #sb-head { padding:10px 14px; border-bottom:1px solid var(--border); font-size:0.78rem; color:var(--muted); display:flex; align-items:center; flex-shrink:0; }
     #last-update { margin-left:auto; font-variant-numeric:tabular-nums; }
 
@@ -216,7 +216,6 @@
     .plane-sub { display:block; font-size:.72em; font-weight:500; opacity:.75; margin-top:1px; white-space:nowrap; }
 
     @media (max-width:640px) {
-      #sidebar { width:100%; height:280px; border-left:none; border-top:1px solid var(--border); }
       #main { flex-direction:column; }
     }
   </style>
@@ -707,11 +706,10 @@ async function fetchAircraft() {
   } else {
     const ab = toAirborne(raw);
     if (ab.length === 0) {
-      document.getElementById('fallback-note').classList.add('on');
+      showToast('⚠ Kein Flugzeug im Radius — zeige nächstes');
       const fb = await queryAPIs(250);
       processAircraft(fb ? toAirborne(fb) : [], true);
     } else {
-      document.getElementById('fallback-note').classList.remove('on');
       processAircraft(ab, false);
     }
     setStatus('active');
