@@ -380,7 +380,7 @@ document.getElementById('ib-close').addEventListener('click', () => {
 // ═══════════════════════════════════
 //  State
 // ═══════════════════════════════════
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 10_000;
 const KM_TO_NM   = 0.539957;
 
 let map, userMarker;
@@ -705,11 +705,11 @@ function updateMarkers() {
   aircraftData.forEach((ac,i) => {
     const isSel=ac.hex===selectedHex, isTop=i===0;
     if (aircraftMarkers[ac.hex]) {
-      aircraftMarkers[ac.hex].marker.setLatLng([ac.lat,ac.lng]);
-      aircraftMarkers[ac.hex].marker.setIcon(planeIcon(ac.track,isSel,isTop));
+      animateMarkerTo(ac.hex, ac.lat, ac.lng);
+      aircraftMarkers[ac.hex].marker.setIcon(planeIcon(ac,isSel,isTop));
     } else {
       const m = L.marker([ac.lat,ac.lng],{
-        icon:planeIcon(ac.track,isSel,isTop), title:ac.callsign, zIndexOffset:isTop?500:0
+        icon:planeIcon(ac,isSel,isTop), title:ac.callsign, zIndexOffset:isTop?500:0
       }).addTo(map);
       m.on('click', e => { L.DomEvent.stopPropagation(e); select(ac.hex); });
       m.bindTooltip(tooltipHtml(ac),{permanent:isTop,direction:'top',offset:[0,-6]});
@@ -721,23 +721,84 @@ function updateMarkers() {
   }
 }
 
-function planeIcon(track, selected, closest) {
-  const deg   = track ?? 0;
+function planeIcon(ac, selected, closest) {
+  const deg   = ac.track ?? 0;
   const color = selected ? '#00d4ff' : closest ? '#00ff88' : '#ffffff';
   const ring  = selected ? 'rgba(0,212,255,.35)' : closest ? 'rgba(0,255,136,.25)' : 'rgba(0,0,0,.65)';
   const size  = selected ? 46 : closest ? 40 : 34;
   const h     = size / 2;
+  const cat   = (ac.category || '').toUpperCase();
+  const type  = (ac.type     || '').toUpperCase();
 
-  // Classic top-down airplane shape in SVG (nose points up/north, rotated by track)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100" style="display:block">
-    <circle cx="50" cy="50" r="48" fill="${ring}" stroke="${color}" stroke-width="2.5"/>
-    <g transform="rotate(${deg},50,50)">
+  const isHeli   = cat==='A7' || /^(R22|R44|R66|EC3|EC4|EC5|H14|H13|S76|S92|BK1|B06|B07|MD5|UH6|CH4|NH9|TIGR|LYNX)/.test(type);
+  const isGlider = cat==='B1' || /^(ASK|ASH|DG[0-9]|LS[0-9]|K8|K21|DISC|NIMB|SPAR)/.test(type);
+  const isBalloon= cat==='B2';
+  const isDrone  = cat==='B6';
+
+  let shape;
+  if (isHeli) {
+    shape = `<g transform="rotate(${deg},50,50)">
+      <circle cx="50" cy="40" r="24" fill="none" stroke="${color}" stroke-width="2" opacity=".5"/>
+      <line x1="26" y1="40" x2="74" y2="40" stroke="${color}" stroke-width="5.5" stroke-linecap="round"/>
+      <line x1="50" y1="16" x2="50" y2="64" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity=".8"/>
+      <ellipse cx="50" cy="58" rx="9" ry="13" fill="${color}" stroke="rgba(0,0,0,.4)" stroke-width="2"/>
+      <rect x="47" y="70" width="6" height="13" rx="2" fill="${color}" opacity=".75"/>
+      <line x1="40" y1="81" x2="60" y2="81" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+    </g>`;
+  } else if (isGlider) {
+    shape = `<g transform="rotate(${deg},50,50)">
+      <path d="M50,42 L4,57 L50,53 L96,57 Z" fill="${color}" stroke="rgba(0,0,0,.4)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M50,16 C52,16 54,20 54,28 L54,74 C54,80 52,84 50,84 C48,84 46,80 46,74 L46,28 C46,20 48,16 50,16 Z" fill="${color}"/>
+      <line x1="50" y1="72" x2="38" y2="85" stroke="${color}" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="50" y1="72" x2="62" y2="85" stroke="${color}" stroke-width="3.5" stroke-linecap="round"/>
+    </g>`;
+  } else if (isBalloon) {
+    shape = `<g>
+      <circle cx="50" cy="40" r="26" fill="${color}" opacity=".85" stroke="rgba(0,0,0,.4)" stroke-width="2"/>
+      <path d="M50,14 Q62,27 50,40 Q38,27 50,14 Z" fill="rgba(0,0,0,.18)"/>
+      <path d="M76,40 Q63,52 50,40 Q63,28 76,40 Z" fill="rgba(0,0,0,.18)"/>
+      <path d="M50,66 Q38,53 50,40 Q62,53 50,66 Z" fill="rgba(0,0,0,.18)"/>
+      <path d="M24,40 Q37,28 50,40 Q37,52 24,40 Z" fill="rgba(0,0,0,.18)"/>
+      <rect x="44" y="66" width="12" height="9" rx="2" fill="${color}" opacity=".8"/>
+    </g>`;
+  } else if (isDrone) {
+    shape = `<g transform="rotate(45,50,50)">
+      <rect x="43" y="43" width="14" height="14" rx="3" fill="${color}"/>
+      <line x1="50" y1="50" x2="18" y2="18" stroke="${color}" stroke-width="4"/>
+      <line x1="50" y1="50" x2="82" y2="18" stroke="${color}" stroke-width="4"/>
+      <line x1="50" y1="50" x2="18" y2="82" stroke="${color}" stroke-width="4"/>
+      <line x1="50" y1="50" x2="82" y2="82" stroke="${color}" stroke-width="4"/>
+      <circle cx="18" cy="18" r="9" fill="${color}" opacity=".75"/>
+      <circle cx="82" cy="18" r="9" fill="${color}" opacity=".75"/>
+      <circle cx="18" cy="82" r="9" fill="${color}" opacity=".75"/>
+      <circle cx="82" cy="82" r="9" fill="${color}" opacity=".75"/>
+    </g>`;
+  } else {
+    shape = `<g transform="rotate(${deg},50,50)">
       <path d="M50,14 C47,14 44,19 44,26 L17,46 L17,54 L44,48 L44,66 L37,70 L37,76 L50,72 L63,76 L63,70 L56,66 L56,48 L83,54 L83,46 L56,26 C56,19 53,14 50,14 Z"
         fill="${color}" stroke="rgba(0,0,0,.45)" stroke-width="2.5" stroke-linejoin="round"/>
-    </g>
-  </svg>`;
+    </g>`;
+  }
 
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100" style="display:block">
+    <circle cx="50" cy="50" r="48" fill="${ring}" stroke="${color}" stroke-width="2.5"/>
+    ${shape}
+  </svg>`;
   return L.divIcon({ className:'', html:svg, iconSize:[size,size], iconAnchor:[h,h] });
+}
+
+function animateMarkerTo(hex, toLat, toLng) {
+  const entry = aircraftMarkers[hex];
+  if (!entry) return;
+  const from = entry.marker.getLatLng();
+  if (entry.anim) cancelAnimationFrame(entry.anim);
+  const t0  = performance.now();
+  const dur = REFRESH_MS * 0.92;
+  (function step(now) {
+    const p = Math.min((now - t0) / dur, 1);
+    entry.marker.setLatLng([from.lat + (toLat - from.lat) * p, from.lng + (toLng - from.lng) * p]);
+    if (p < 1) entry.anim = requestAnimationFrame(step);
+  })(performance.now());
 }
 
 // ═══════════════════════════════════
@@ -750,7 +811,7 @@ function select(hex) {
   document.querySelectorAll('.ac-item').forEach(el=>el.classList.toggle('selected',el.dataset.hex===hex));
   for (const [h,{marker}] of Object.entries(aircraftMarkers)) {
     const d=aircraftData.find(a=>a.hex===h);
-    if (d) marker.setIcon(planeIcon(d.track,h===hex,d===aircraftData[0]));
+    if (d) marker.setIcon(planeIcon(d,h===hex,d===aircraftData[0]));
   }
   document.querySelector(`.ac-item[data-hex="${hex}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest'});
   map.flyTo([ac.lat,ac.lng],Math.max(map.getZoom(),10),{duration:1});
