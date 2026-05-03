@@ -2,14 +2,16 @@
   "name": "FlugRadar – Flugzeuge über dir",
   "short_name": "FlugRadar",
   "description": "Welches Flugzeug fliegt gerade über dir? Echtzeit-ADS-B-Radar.",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#080c10",
   "theme_color": "#00d4ff",
   "orientation": "any",
+  "prefer_related_applications": false,
+  "categories": ["navigation", "utilities"],
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "icon.svg", "sizes": "any",     "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any",     "type": "image/svg+xml", "purpose": "maskable" }
   ]
 }

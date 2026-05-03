@@ -167,17 +167,12 @@
     .ac-arrow { font-size:1.8rem; flex-shrink:0; width:32px; text-align:center; line-height:1; }
     .ac-info  { flex:1; min-width:0; }
 
-    /* Callsign */
-    .ac-call  { font-weight:800; font-size:1.15rem; line-height:1.2; }
-
-    /* Route: groß und klar lesbar */
-    .ac-route {
-      font-size:1rem; color:var(--text); margin-top:5px;
-      line-height:1.3; font-weight:500;
-    }
-
-    /* Airline */
-    .ac-airline { font-size:0.88rem; color:var(--muted); margin-top:3px; }
+    /* Zeile 1: Airline · Flugnummer */
+    .ac-l1 { font-weight:800; font-size:1.1rem; line-height:1.3; color:var(--text); }
+    /* Zeile 2: Abflugort */
+    .ac-l2 { font-size:1rem; color:var(--text); margin-top:5px; line-height:1.3; }
+    /* Zeile 3: Ankunftort */
+    .ac-l3 { font-size:1rem; color:var(--muted); margin-top:2px; line-height:1.3; }
 
     /* Distance */
     .ac-dist { flex-shrink:0; text-align:right; }
@@ -554,9 +549,9 @@ function renderList() {
     item.innerHTML = `
       <div class="ac-arrow">${arrowCh(ac.track)}</div>
       <div class="ac-info">
-        <div class="ac-call">${esc(ac.callsign)}</div>
-        <div class="ac-route" id="rt-${ac.hex}"></div>
-        <div class="ac-airline" id="al-${ac.hex}"></div>
+        <div class="ac-l1" id="l1-${ac.hex}">${esc(ac.callsign)}</div>
+        <div class="ac-l2" id="l2-${ac.hex}" style="color:var(--muted)">…</div>
+        <div class="ac-l3" id="l3-${ac.hex}"></div>
       </div>
       <div class="ac-dist">
         <div class="km">${dist} km</div>
@@ -569,20 +564,40 @@ function renderList() {
 }
 
 function updateListItem(ac) {
-  const rt = document.getElementById(`rt-${ac.hex}`);
-  const al = document.getElementById(`al-${ac.hex}`);
-  if (!rt) return;
+  const l1 = document.getElementById(`l1-${ac.hex}`);
+  const l2 = document.getElementById(`l2-${ac.hex}`);
+  const l3 = document.getElementById(`l3-${ac.hex}`);
+  if (!l1) return;
   const r = ac.route;
+
   if (r) {
-    const from = r.origin?.municipality      || r.origin?.name      || r.origin?.iata_code      || '?';
-    const to   = r.destination?.municipality || r.destination?.name || r.destination?.iata_code || '?';
-    rt.innerHTML = `${flag(r.origin?.country_iso_name)}&thinsp;${esc(from)} <span style="color:var(--accent)">→</span> ${flag(r.destination?.country_iso_name)}&thinsp;${esc(to)}`;
-    al.textContent = r.airline?.name || '';
+    // Zeile 1: Airline + Flugnummer (IATA bevorzugt, sonst ICAO)
+    const airline    = r.airline?.name || '';
+    const flightNum  = r.callsign_iata || r.callsign_icao || ac.callsign;
+    l1.textContent   = airline ? `${airline} ${flightNum}` : flightNum;
+    l1.style.color   = '';
+
+    // Zeile 2: Abflugort
+    const fromCity   = r.origin?.municipality || r.origin?.name || r.origin?.iata_code || '?';
+    const fromFlag   = flag(r.origin?.country_iso_name);
+    l2.innerHTML     = `${fromFlag}&thinsp;${esc(fromCity)}`;
+    l2.style.color   = 'var(--text)';
+
+    // Zeile 3: Ankunftort
+    const toCity     = r.destination?.municipality || r.destination?.name || r.destination?.iata_code || '?';
+    const toFlag     = flag(r.destination?.country_iso_name);
+    l3.innerHTML     = `${toFlag}&thinsp;${esc(toCity)}`;
+
   } else if (ac.route === undefined) {
-    rt.innerHTML = '<span style="color:var(--muted)">Route wird geladen…</span>';
+    // Noch nicht geladen
+    l2.textContent = '…';
+    l2.style.color = 'var(--muted)';
+    l3.textContent = '';
   } else {
-    rt.textContent = [ac.reg, ac.type].filter(Boolean).join(' · ') || '–';
-    al.textContent = '';
+    // Keine Route gefunden
+    l2.textContent = [ac.type, ac.reg].filter(Boolean).join(' · ') || '–';
+    l2.style.color = 'var(--muted)';
+    l3.textContent = '';
   }
 }
 
