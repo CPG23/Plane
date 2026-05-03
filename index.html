@@ -713,7 +713,7 @@ function processAircraft(airborne, isFallback) {
   aircraftData = airborne.map(a => ({
     hex:      a.hex||'',
     callsign: (a.flight||'').trim()||(a.hex||'').toUpperCase(),
-    reg:      a.r||'', type: a.t||'',
+    reg:      a.r||'', type: a.t||'', category: a.category||'',
     lat:a.lat, lng:a.lon,
     altFt:  a.alt_baro,
     altM:   Math.round(a.alt_baro*0.3048),
@@ -800,6 +800,40 @@ function renderList() {
   });
 }
 
+function classifyAircraft(ac) {
+  const cat  = (ac.category || '').toUpperCase();
+  const type = (ac.type     || '').toUpperCase();
+  const cs   = (ac.callsign || '').replace(/\s/g, '').toUpperCase();
+  const reg  = (ac.reg      || '').replace(/-/g, '').toUpperCase();
+
+  // ADS-B emitter category (most reliable)
+  if (cat === 'A7') return '🚁 Hubschrauber';
+  if (cat === 'B1') return '⛵ Segelflugzeug';
+  if (cat === 'B2') return '🎈 Ballon';
+  if (cat === 'B4') return '🪂 Ultraleichtflugzeug';
+  if (cat === 'B6') return '🤖 Drohne / UAV';
+  if (cat === 'A5') return '✈️ Großraumjet';
+  if (cat === 'A6') return '✈️ Hochleistungsflugzeug';
+
+  // Helicopter type codes
+  if (/^(R22|R44|R66|EC3|EC4|EC5|EC6|H14|H13|H12|AS3|AS6|S76|S92|BK1|B06|B07|MD5|MD6|UH6|CH4|AH6|NH9|TIGR|LYNX|PUMA)/.test(type))
+    return '🚁 Hubschrauber';
+
+  // Military
+  if (/^(F16|F18|F35|EF2|EUFI|C13|C17|A400|PC21|HAWK|L39|L15|MIG|SU2|SU3)/.test(type))
+    return '🎖️ Militärflugzeug';
+
+  // Gliders
+  if (/^(ASK|ASH|DG[0-9]|LS[0-9]|K8|K21|DISC|NIMB|SPAR|VENI|PEGU|LAK|SZD|FOX)/.test(type))
+    return '⛵ Segelflugzeug';
+
+  // Callsign == registration (stripped) → no airline code → private
+  if (reg && cs && cs === reg) return '🛩️ Privatflugzeug';
+  if (cat === 'A1' || cat === 'A2') return '🛩️ Privatflugzeug';
+
+  return '🛩️ Kleinflugzeug';
+}
+
 function updateListItem(ac) {
   const l1 = document.getElementById(`l1-${ac.hex}`);
   const l2 = document.getElementById(`l2-${ac.hex}`);
@@ -833,10 +867,10 @@ function updateListItem(ac) {
     l2.style.color = 'var(--muted)';
     l3.textContent = '';
   } else {
-    // Keine Route gefunden
-    l2.textContent = [ac.type, ac.reg].filter(Boolean).join(' · ') || '–';
+    // Keine Route gefunden – Flugzeug klassifizieren
+    l2.textContent = classifyAircraft(ac);
     l2.style.color = 'var(--muted)';
-    l3.textContent = '';
+    l3.textContent = [ac.type, ac.reg].filter(Boolean).join(' · ') || '';
   }
 }
 
