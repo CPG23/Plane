@@ -147,8 +147,16 @@
     #sb-head { padding:10px 14px; border-bottom:1px solid var(--border); font-size:0.78rem; color:var(--muted); display:flex; align-items:center; flex-shrink:0; }
     #last-update { margin-left:auto; font-variant-numeric:tabular-nums; }
 
-    #fallback-note { display:none; padding:8px 14px; background:rgba(255,215,0,.07); border-bottom:1px solid rgba(255,215,0,.25); font-size:0.8rem; color:var(--yellow); }
-    #fallback-note.on { display:block; }
+    #no-aircraft-msg {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); z-index: 500;
+      background: rgba(8,12,16,.88); border: 1px solid rgba(0,212,255,.3);
+      border-radius: 16px; padding: 22px 32px; text-align: center;
+      pointer-events: none; backdrop-filter: blur(4px);
+    }
+    #no-aircraft-msg.on { display: block; }
+    #no-aircraft-msg .nm-icon { font-size: 2.2rem; margin-bottom: 8px; }
+    #no-aircraft-msg .nm-text { color: var(--text); font-size: 1rem; font-weight: 600; letter-spacing: .3px; }
 
     #aircraft-list { flex:1; overflow-y:auto; }
     #aircraft-list::-webkit-scrollbar { width:4px; }
@@ -301,6 +309,7 @@
 
   <div id="main">
     <div id="map"></div>
+    <div id="no-aircraft-msg"><div class="nm-icon">🔍</div><div class="nm-text">Kein Flugzeug im Radius</div></div>
     <div id="sidebar">
       <div id="sb-head"><span>📡 Flugzeuge in der Nähe</span><span id="last-update"></span></div>
       <div id="fallback-note">⚠ Kein Flugzeug im Radius — zeige nächstes verfügbares</div>
@@ -518,13 +527,7 @@ async function fetchAircraft() {
     setStatus('error');
   } else {
     const ab = toAirborne(raw);
-    if (ab.length === 0) {
-      showToast('⚠ Kein Flugzeug im Radius — zeige nächstes');
-      const fb = await queryAPIs(250);
-      processAircraft(fb ? toAirborne(fb) : [], true);
-    } else {
-      processAircraft(ab, false);
-    }
+    processAircraft(ab);
     setStatus('active');
     hideSplash();
   }
@@ -539,7 +542,7 @@ function toAirborne(raw) {
   return raw.filter(a => a.lat!=null && a.lon!=null && a.alt_baro!=='ground' && typeof a.alt_baro==='number');
 }
 
-function processAircraft(airborne, isFallback) {
+function processAircraft(airborne) {
   aircraftData = airborne.map(a => ({
     hex:      a.hex||'',
     callsign: (a.flight||'').trim()||(a.hex||'').toUpperCase(),
@@ -556,7 +559,6 @@ function processAircraft(airborne, isFallback) {
     route:  routeCache[(a.flight||'').trim()||(a.hex||'')] ?? undefined,
   })).sort((a,b)=>a.dist-b.dist);
 
-  if (isFallback && aircraftData.length > 1) aircraftData = [aircraftData[0]];
 
   document.getElementById('aircraft-count').textContent = aircraftData.length;
   renderList();
@@ -614,12 +616,9 @@ function renderList() {
   const list = document.getElementById('aircraft-list');
   [...list.querySelectorAll('.ac-item')].forEach(el=>el.remove());
 
-  if (!aircraftData.length) {
-    document.getElementById('empty-state').classList.add('on');
-    document.getElementById('empty-msg').textContent = 'Keine Flugzeuge in der Umgebung.';
-    return;
-  }
-  document.getElementById('empty-state').classList.remove('on');
+  const noMsg = document.getElementById('no-aircraft-msg');
+  if (!aircraftData.length) { noMsg.classList.add('on'); return; }
+  noMsg.classList.remove('on');
 
   aircraftData.forEach((ac,i) => {
     const item = document.createElement('div');
