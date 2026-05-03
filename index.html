@@ -603,18 +603,23 @@ let selectedHex     = null;
 let refreshTimer    = null;
 let isLoading       = false;
 let splashGone      = false;
+let splashReady     = false;
+let splashMinDone   = false;
 const routeCache    = {};
 
 // ═══════════════════════════════════
 //  Splash
 // ═══════════════════════════════════
 function setSplashMsg(m) { document.getElementById('splash-msg').textContent = m; }
-function hideSplash() {
-  if (splashGone) return; splashGone = true;
+function _dismissSplash() {
+  if (splashGone || !splashReady || !splashMinDone) return;
+  splashGone = true;
   const el = document.getElementById('splash');
   el.classList.add('out');
   setTimeout(() => el.remove(), 1000);
 }
+function hideSplash() { splashReady = true; _dismissSplash(); }
+setTimeout(() => { splashMinDone = true; _dismissSplash(); }, 6000);
 
 // ═══════════════════════════════════
 //  Map
