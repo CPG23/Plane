@@ -126,11 +126,15 @@
     .aircraft-item.selected { background: rgba(88,166,255,.1); border-left: 3px solid var(--accent); padding-left: 9px; }
     .aircraft-item.closest  { border-top: 2px solid var(--green); }
 
-    .ac-icon   { font-size: 1.25rem; text-align: center; line-height: 1; }
-    .ac-call   { font-weight: 700; font-size: 0.92rem; }
-    .ac-sub    { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
-    .ac-dist   { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
+    .ac-icon    { font-size: 1.25rem; text-align: center; line-height: 1; }
+    .ac-call    { font-weight: 700; font-size: 0.92rem; }
+    .ac-airline { font-size: 0.75rem; color: var(--accent); margin-top: 2px; font-weight: 600; min-height: 1em; }
+    .ac-sub     { font-size: 0.71rem; color: var(--muted); margin-top: 1px; }
+    .ac-dist    { font-size: 0.78rem; font-weight: 700; color: var(--accent); text-align: right; white-space: nowrap; }
     .ac-dist small { display: block; font-size: 0.68rem; color: var(--muted); font-weight: 400; }
+    .route-row  { grid-column: span 2; }
+    .route-airports { font-size: 0.9rem; margin-top: 4px; line-height: 1.5; }
+    .route-arrow { color: var(--accent); margin: 0 4px; }
 
     /* Detail panel */
     #detail-panel {
@@ -223,8 +227,9 @@
     <div class="badge"><span id="aircraft-count">0</span> Flugzeuge</div>
     <div class="spacer"></div>
     <select id="radius-select">
+      <option value="10" selected>10 km</option>
       <option value="25">25 km</option>
-      <option value="50" selected>50 km</option>
+      <option value="50">50 km</option>
       <option value="100">100 km</option>
       <option value="200">200 km</option>
     </select>
@@ -279,6 +284,7 @@ let aircraftMarkers= {};   // hex → { marker }
 let selectedHex    = null;
 let refreshTimer   = null;
 let isLoading      = false;
+const routeCache   = {};   // callsign → route object | null
 
 // ────────────────────────────────────────
 //  Map
@@ -384,7 +390,65 @@ async function fetchAircraft() {
 }
 
 // ────────────────────────────────────────
-//  Process adsb.lol aircraft array
+//  Route lookup via adsbdb.com (free, CORS-enabled)
+//  Returns { airline, origin, destination } or null
+// ────────────────────────────────────────
+async function lookupRoute(callsign) {
+  if (!callsign || callsign === callsign.toUpperCase().replace(/\d/g,'') + '0') return null;
+  if (Object.prototype.hasOwnProperty.call(routeCache, callsign)) return routeCache[callsign];
+  routeCache[callsign] = null; // mark as pending to prevent duplicate fetches
+  try {
+    const res = await fetchWithTimeout(
+      `https://api.adsbdb.com/v0/callsign/${encodeURIComponent(callsign)}`, 6000
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const route = json?.response?.flightroute ?? null;
+    routeCache[callsign] = route;
+    return route;
+  } catch { return null; }
+}
+
+function flag(iso2) {
+  if (!iso2 || iso2.length !== 2) return '';
+  return [...iso2.toUpperCase()].map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('');
+}
+
+async function fetchRoutes(snapshot) {
+  // Fetch routes in parallel for all visible aircraft, update UI as each resolves
+  await Promise.allSettled(snapshot.map(async ac => {
+    if (!ac.callsign) return;
+    const route = await lookupRoute(ac.callsign);
+    ac.route = route;
+    updateListItem(ac);
+    if (selectedHex === ac.hex) showDetail(ac);
+  }));
+}
+
+function updateListItem(ac) {
+  const item = document.querySelector(`.aircraft-item[data-hex="${ac.hex}"]`);
+  if (!item) return;
+  const r = ac.route;
+  const el = item.querySelector('.ac-airline');
+  if (!el) return;
+  if (r) {
+    const airline = r.airline?.name || '';
+    const orig = r.origin?.iata_code    || r.origin?.icao_code    || '';
+    const dest = r.destination?.iata_code || r.destination?.icao_code || '';
+    const origCity = r.origin?.municipality      || '';
+    const destCity = r.destination?.municipality || '';
+    el.innerHTML =
+      `<span title="${esc(origCity)}">${flag(r.origin?.country_iso_name)}${orig}</span>` +
+      `<span class="route-arrow">→</span>` +
+      `<span title="${esc(destCity)}">${flag(r.destination?.country_iso_name)}${dest}</span>` +
+      (airline ? ` <span style="color:var(--muted);font-weight:400">· ${esc(airline)}</span>` : '');
+  } else {
+    el.textContent = '';
+  }
+}
+
+// ────────────────────────────────────────
+//  Process aircraft array
 // ────────────────────────────────────────
 function processAircraft(raw) {
   const airborne = raw.filter(a =>
@@ -406,11 +470,13 @@ function processAircraft(raw) {
     vsFtMin:  a.baro_rate ?? null,
     squawk:   a.squawk || '',
     dist:     haversine(userPos.lat, userPos.lng, a.lat, a.lon),
+    route:    routeCache[((a.flight || '').trim() || a.hex)] ?? null,
   })).sort((a, b) => a.dist - b.dist);
 
   document.getElementById('aircraft-count').textContent = aircraftData.length;
   renderList();
   updateMarkers();
+  fetchRoutes(aircraftData.slice()); // async, updates items as data arrives
 }
 
 // ────────────────────────────────────────
@@ -434,21 +500,23 @@ function renderList() {
       + (ac.hex === selectedHex ? ' selected' : '');
     item.dataset.hex = ac.hex;
 
-    const altFt  = ac.altFt  != null ? Math.round(ac.altFt).toLocaleString('de') + ' ft' : '–';
-    const spdKt  = ac.speedKt != null ? Math.round(ac.speedKt) + ' kt' : '–';
-    const vDir   = ac.vsFtMin > 50 ? '↑' : ac.vsFtMin < -50 ? '↓' : '→';
-    const sub    = [ac.reg, ac.type].filter(Boolean).join(' · ') || ac.callsign;
+    const altFt = ac.altFt   != null ? Math.round(ac.altFt).toLocaleString('de') + ' ft' : '–';
+    const spdKt = ac.speedKt != null ? Math.round(ac.speedKt) + ' kt' : '–';
+    const vDir  = ac.vsFtMin > 50 ? '↑' : ac.vsFtMin < -50 ? '↓' : '→';
+    const meta  = [ac.type, ac.reg].filter(Boolean).join(' · ');
 
     item.innerHTML = `
       <div class="ac-icon">${arrow(ac.track)}</div>
-      <div>
+      <div style="min-width:0">
         <div class="ac-call">${esc(ac.callsign)}</div>
-        <div class="ac-sub">${esc(sub)} &bull; ${altFt} ${vDir} &bull; ${spdKt}</div>
+        <div class="ac-airline"></div>
+        <div class="ac-sub">${meta ? esc(meta) + ' &bull; ' : ''}${altFt} ${vDir} &bull; ${spdKt}</div>
       </div>
       <div class="ac-dist">
         ${ac.dist < 1 ? '<1' : Math.round(ac.dist)} km
         <small>${i === 0 ? '📍 nächstes' : ''}</small>
       </div>`;
+    updateListItem(ac); // fill route if already cached
 
     item.addEventListener('click', () => select(ac.hex));
     list.appendChild(item);
@@ -524,17 +592,37 @@ function showDetail(ac) {
   const trk    = ac.track   != null ? `${Math.round(ac.track)}° (${compass(ac.track)})` : '–';
   const vs     = ac.vsFtMin != null ? (ac.vsFtMin > 0 ? '+' : '') + Math.round(ac.vsFtMin) + ' ft/min' : '–';
   const vsClass= ac.vsFtMin >  50 ? 'up' : ac.vsFtMin < -50 ? 'down' : '';
+  const r      = ac.route;
+
+  const routeHtml = r ? `
+    <div class="detail-item route-row">
+      <div class="detail-label">✈ Flugroute · ${esc(r.airline?.name || '')}</div>
+      <div class="detail-value route-airports">
+        <span title="${esc(r.origin?.name || '')}">
+          ${flag(r.origin?.country_iso_name)}
+          <strong>${r.origin?.iata_code || r.origin?.icao_code || '?'}</strong>
+          ${esc(r.origin?.municipality || '')}
+        </span>
+        <span class="route-arrow"> → </span>
+        <span title="${esc(r.destination?.name || '')}">
+          ${flag(r.destination?.country_iso_name)}
+          <strong>${r.destination?.iata_code || r.destination?.icao_code || '?'}</strong>
+          ${esc(r.destination?.municipality || '')}
+        </span>
+      </div>
+    </div>` : '';
 
   document.getElementById('det-grid').innerHTML = `
-    <div class="detail-item"><div class="detail-label">Rufzeichen</div><div class="detail-value">${esc(ac.callsign)}</div></div>
+    ${routeHtml}
     <div class="detail-item"><div class="detail-label">Entfernung</div><div class="detail-value">${Math.round(ac.dist)} km</div></div>
+    <div class="detail-item"><div class="detail-label">Rufzeichen</div><div class="detail-value">${esc(ac.callsign)}</div></div>
     <div class="detail-item"><div class="detail-label">Höhe</div><div class="detail-value">${alt}<br><small style="color:var(--muted);font-size:.72rem">${altM}</small></div></div>
     <div class="detail-item"><div class="detail-label">Geschwindigkeit</div><div class="detail-value">${spd}<br><small style="color:var(--muted);font-size:.72rem">${spdKmh}</small></div></div>
     <div class="detail-item"><div class="detail-label">Kurs</div><div class="detail-value">${trk}</div></div>
     <div class="detail-item"><div class="detail-label">Steigrate</div><div class="detail-value ${vsClass}">${vs}</div></div>
     ${ac.reg  ? `<div class="detail-item"><div class="detail-label">Kennzeichen</div><div class="detail-value">${esc(ac.reg)}</div></div>` : ''}
     ${ac.type ? `<div class="detail-item"><div class="detail-label">Flugzeugtyp</div><div class="detail-value">${esc(ac.type)}</div></div>` : ''}
-    <div class="detail-item" style="grid-column:span 2">
+    <div class="detail-item route-row">
       <div class="detail-label">ICAO24 / Links</div>
       <div class="detail-value" style="font-family:monospace;font-size:.78rem">
         ${ac.hex.toUpperCase()}
