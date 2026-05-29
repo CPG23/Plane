@@ -212,6 +212,13 @@
     .det-city-code { font-size:0.72rem; color:var(--muted); font-weight:400; margin-top:2px; }
     .det-arr { color:var(--accent); font-size:1.3rem; padding-top:2px; }
 
+    .det-aircraft { padding:12px 14px; border-bottom:1px solid var(--border); background:var(--surf2); }
+    .det-type-title { font-size:1.05rem; font-weight:800; margin-top:3px; }
+    .det-type-sub { font-size:0.78rem; color:var(--muted); margin-top:3px; }
+    .det-photo { margin-top:10px; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#09111a; border:1px solid var(--border); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:0.78rem; }
+    .det-photo img { width:100%; height:100%; object-fit:cover; display:block; }
+    .det-photo-credit { margin-top:5px; color:var(--muted); font-size:0.68rem; text-align:right; }
+
     .det-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); }
     .det-cell { background:var(--surf2); padding:10px 14px; }
     .det-cell.full { grid-column:span 2; }
@@ -653,6 +660,83 @@ function classifyAircraft(ac) {
   return '🛩️ Kleinflugzeug';
 }
 
+const TYPE_INFO = {
+  A20N:{name:'Airbus A320neo', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/D-AINB_Airbus_A320neo_Lufthansa_(29620147730).jpg'},
+  A21N:{name:'Airbus A321neo', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A321-271NX,_Wizz_Air_AN2411809.jpg'},
+  A319:{name:'Airbus A319', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A319-112,_easyJet_AN2273162.jpg'},
+  A320:{name:'Airbus A320', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A320-214,_easyJet_AN1400646.jpg'},
+  A321:{name:'Airbus A321', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A321-231,_Lufthansa_AN2192998.jpg'},
+  A332:{name:'Airbus A330-200', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A330-243,_Delta_Air_Lines_AN1833932.jpg'},
+  A333:{name:'Airbus A330-300', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A330-343,_Lufthansa_AN2201332.jpg'},
+  A359:{name:'Airbus A350-900', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A350-941,_Lufthansa_AN2202381.jpg'},
+  A388:{name:'Airbus A380-800', maker:'Airbus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Airbus_A380-841,_Emirates_AN2245920.jpg'},
+  B38M:{name:'Boeing 737 MAX 8', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_737_MAX_8,_TUI_Airways_AN2186499.jpg'},
+  B738:{name:'Boeing 737-800', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_737-8AS,_Ryanair_AN1174477.jpg'},
+  B737:{name:'Boeing 737-700', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_737-7K2,_KLM_AN1418944.jpg'},
+  B739:{name:'Boeing 737-900', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_737-924ER,_United_Airlines_AN2068814.jpg'},
+  B752:{name:'Boeing 757-200', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_757-232,_Delta_Air_Lines_AN2258050.jpg'},
+  B763:{name:'Boeing 767-300', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_767-332(ER),_Delta_Air_Lines_AN2317902.jpg'},
+  B772:{name:'Boeing 777-200', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_777-236(ER),_British_Airways_AN2190832.jpg'},
+  B77W:{name:'Boeing 777-300ER', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_777-31H(ER),_Emirates_AN2252099.jpg'},
+  B788:{name:'Boeing 787-8 Dreamliner', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_787-8_Dreamliner,_LOT_Polish_Airlines_AN2110946.jpg'},
+  B789:{name:'Boeing 787-9 Dreamliner', maker:'Boeing', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Boeing_787-9_Dreamliner,_KLM_AN2022784.jpg'},
+  E190:{name:'Embraer 190', maker:'Embraer', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Embraer_ERJ-190-100LR,_KLM_Cityhopper_AN2003818.jpg'},
+  E195:{name:'Embraer 195', maker:'Embraer', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Embraer_ERJ-195LR,_Lufthansa_CityLine_AN1905204.jpg'},
+  CRJ9:{name:'Bombardier CRJ900', maker:'Bombardier', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Bombardier_CRJ-900LR,_Lufthansa_CityLine_AN2110566.jpg'},
+  DH8D:{name:'De Havilland Canada Dash 8 Q400', maker:'De Havilland Canada', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/De_Havilland_Canada_DHC-8-402Q_Dash_8,_Austrian_Airlines_AN2258778.jpg'},
+  C172:{name:'Cessna 172 Skyhawk', maker:'Cessna', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Cessna_172S_Skyhawk_SP,_Private_AN1986328.jpg'},
+  PC12:{name:'Pilatus PC-12', maker:'Pilatus', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Pilatus_PC-12-47E,_Private_AN2134105.jpg'},
+  R44:{name:'Robinson R44', maker:'Robinson Helicopter', photo:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Robinson_R44_Raven_II,_Private_AN1919698.jpg'}
+};
+
+function aircraftTypeInfo(ac) {
+  const code = (ac.type || '').trim().toUpperCase();
+  const known = TYPE_INFO[code];
+  if (known) return { code, ...known };
+  if (!code) return { code:'', name:classifyAircraft(ac), maker:'', photo:'' };
+
+  let maker = '';
+  if (code.startsWith('A')) maker = 'Airbus';
+  else if (code.startsWith('B')) maker = 'Boeing';
+  else if (code.startsWith('E')) maker = 'Embraer';
+  else if (code.startsWith('CRJ')) maker = 'Bombardier';
+  else if (code.startsWith('C')) maker = 'Cessna';
+  else if (code.startsWith('GLF')) maker = 'Gulfstream';
+  else if (code.startsWith('R') || code.startsWith('EC') || code.startsWith('H')) maker = 'Hubschrauber';
+
+  return { code, name:maker ? `${maker} (${code})` : `${classifyAircraft(ac)} (${code})`, maker, photo:'' };
+}
+
+function aircraftPhotoBlock(typeInfo) {
+  const fallback = typeInfo.photo ? `data-fallback="${esc(typeInfo.photo)}"` : '';
+  const src = typeInfo.photo ? `src="${esc(typeInfo.photo)}"` : '';
+  const content = typeInfo.photo
+    ? `<img id="det-photo-img" ${src} alt="${esc(typeInfo.name)}">`
+    : '<span id="det-photo-empty">Kein Typfoto verfuegbar</span>';
+  return `
+    <div class="det-photo" id="det-photo" ${fallback}>
+      ${content}
+    </div>
+    <div class="det-photo-credit" id="det-photo-credit">${typeInfo.photo ? 'Typfoto: Wikimedia Commons' : ''}</div>`;
+}
+
+async function loadAircraftPhoto(ac) {
+  const panel = document.getElementById('detail-panel');
+  if (!panel.classList.contains('on') || selectedHex !== ac.hex) return;
+  try {
+    const res = await tFetch(`https://api.planespotters.net/pub/photos/hex/${encodeURIComponent(ac.hex)}`, 5000);
+    if (!res.ok) return;
+    const data = await res.json();
+    const photo = data?.photos?.[0];
+    const src = photo?.thumbnail_large?.src || photo?.thumbnail?.src || photo?.link;
+    if (!src || selectedHex !== ac.hex) return;
+
+    document.getElementById('det-photo').innerHTML = `<img id="det-photo-img" src="${esc(src)}" alt="${esc(ac.callsign)}">`;
+    const photographer = photo?.photographer || 'Planespotters.net';
+    document.getElementById('det-photo-credit').textContent = `Foto: ${photographer}`;
+  } catch {}
+}
+
 function updateListItem(ac) {
   const l1 = document.getElementById(`l1-${ac.hex}`);
   const l2 = document.getElementById(`l2-${ac.hex}`);
@@ -834,6 +918,7 @@ function showDetail(ac) {
   const vs      = ac.vsFtMin !=null ? (ac.vsFtMin>0?'+':'')+Math.round(ac.vsFtMin)+' ft/min' : '–';
   const vsClass = ac.vsFtMin > 50 ? 'up' : ac.vsFtMin < -50 ? 'down' : '';
 
+  const typeInfo = aircraftTypeInfo(ac);
   const routeBlock = r ? `
     <div class="det-route">
       <div class="det-airline">${esc(r.airline?.name||'')}</div>
@@ -852,10 +937,17 @@ function showDetail(ac) {
 
   document.getElementById('det-body').innerHTML = `
     ${routeBlock}
+    <div class="det-aircraft">
+      <div class="det-lbl">Flugzeugtyp</div>
+      <div class="det-type-title">${esc(typeInfo.name)}</div>
+      <div class="det-type-sub">${typeInfo.code ? `ICAO-Typ: ${esc(typeInfo.code)}` : esc(classifyAircraft(ac))}</div>
+      ${aircraftPhotoBlock(typeInfo)}
+    </div>
     <div class="det-grid">
       <div class="det-cell"><div class="det-lbl">Entfernung</div><div class="det-val">${Math.round(ac.dist)} km</div></div>
       <div class="det-cell"><div class="det-lbl">Höhe</div><div class="det-val">${alt}${altM?`<br><small style="color:var(--muted);font-size:.75rem">${altM}</small>`:''}</div></div>
     </div>`;
+  loadAircraftPhoto(ac);
 }
 
 // ═══════════════════════════════════
